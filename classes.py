@@ -43,15 +43,25 @@ class Bubble(pg.sprite.Sprite):
             self.vel.y = 0
             self.pos.y = 15
         self.rect.center = self.pos
-        if self.vel.x > 0:
-            self.angle = math.atan(self.vel.y/self.vel.x)
-    
+        
     def check_collision(self, bubbles):
         for bubble in bubbles:
             if bubble != self:
                 if pg.sprite.collide_circle(self, bubble):
                     self.vel = vec(0,0)
-
+                    
+class HexTile(pg.sprite.Sprite):
+    """Use a dict to store neighbors.
+    Each pair of opposing sides on a hexagon will be equal to 
+    a different value mod 3. 0,1,2,3,4,5."""
+    
+    def __init__(self, pos, bubble=None):
+        self.pos = pos
+        self.neighbors = {}
+        
+    def set_bubble(self, b):
+        self.bubble = b
+    
                     
 class BubbleGrid():
     def __init__(self, bubble_size, grid_size):
