@@ -1,6 +1,8 @@
 import pygame as pg
 import math
 import os
+from classes import *
+from settings import *
 
 WIDTH = 330
 HEIGHT = 500
@@ -26,21 +28,31 @@ def tile_surface(surface, radius):
     veritcal_spacing = hex_height * 0.75
     rows = int(height//veritcal_spacing)
     cols = int(width//horizontal_spacing)
+    bubbles = pg.sprite.Group()
+    tiles = {}
     for i in range(rows):
         if i % 2 == 0:
             offset = hex_width//2
         else:
             offset = 0
         for j in range(cols):
-            draw_hexagon((j*horizontal_spacing+hex_width//2+offset, i*veritcal_spacing+radius), radius, surface, (255,0,0))
+            center = (j*horizontal_spacing+hex_width//2+offset, i*veritcal_spacing+radius)
+            draw_hexagon(center, radius, surface, (255,0,0))
+            b = Bubble(center, (0,0), color=random.choice(COLORS))
+            bubbles.add(b)
+            tiles[(j,i)] = HexTile(center, b)
+    return bubbles, tiles
 
 def test():
     running = True
-    tile_surface(SCREEN, 15)
+    bubbles, tiles = tile_surface(SCREEN, 20)
     pg.display.flip()
     while running:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
+        bubbles.update()
+        bubbles.draw(SCREEN)
+        pg.display.flip()
 test()
 pg.quit()

@@ -50,14 +50,15 @@ class Bubble(pg.sprite.Sprite):
                 if pg.sprite.collide_circle(self, bubble):
                     self.vel = vec(0,0)
                     
-class HexTile(pg.sprite.Sprite):
+class HexTile():
     """Use a dict to store neighbors.
     Each pair of opposing sides on a hexagon will be equal to 
     a different value mod 3. 0,1,2,3,4,5."""
     
     def __init__(self, pos, bubble=None):
         self.pos = pos
-        self.neighbors = {}
+        self.neighbors = []
+        self.bubble = bubble
         
     def set_bubble(self, b):
         self.bubble = b
