@@ -62,6 +62,16 @@ class HexTile():
         
     def set_bubble(self, b):
         self.bubble = b
+        
+    def clear_bubble(self, b):
+        self.bubble = None
+    
+    def is_occupied(self):
+        if self.b is None:
+            return True
+        else:
+            return False
+            
     
                     
 class BubbleGrid():

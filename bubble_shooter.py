@@ -40,12 +40,30 @@ def tile_surface(surface, radius):
             draw_hexagon(center, radius, surface, (255,0,0))
             b = Bubble(center, (0,0), color=random.choice(COLORS))
             bubbles.add(b)
-            tiles[(j,i)] = HexTile(center, b)
+            tiles[(i,j)] = HexTile(center, b)
+            if offset:
+                neighbors = [(i-1,j), (i-1,j+1), (i,j-1), (i,j+1), (i+1,j), (i+1,j+1)]
+            else:
+                neighbors = [(i-1,j-1), (i-1,j), (i,j-1), (i,j+1), (i+1,j-1), (i+1,j)]
+            neighbors = [x for x in neighbors if x[0]>=0 and x[0]<rows and x[1]>=0 and x[1]<cols]
+            tiles[(i,j)].neighbors += neighbors
     return bubbles, tiles
+
+def set_neighbors(tiles):
+    for item in tile.items():
+        index = item[0]
+        tile = item[1]
+        
 
 def test():
     running = True
+    SCREEN.fill((0,0,0))
     bubbles, tiles = tile_surface(SCREEN, 20)
+    for item in tiles.items():
+         print(item[0])
+         print(item[1].bubble.color)
+         print(item[1].neighbors)
+         
     pg.display.flip()
     while running:
         for event in pg.event.get():
