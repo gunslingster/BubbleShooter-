@@ -3,6 +3,7 @@ import random
 import os
 import math
 from settings import *
+from utils import *
 pg.init()
 
 class Bubble(pg.sprite.Sprite):
@@ -50,13 +51,17 @@ class Bubble(pg.sprite.Sprite):
                 if pg.sprite.collide_circle(self, bubble):
                     self.vel = vec(0,0)
                     
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
+                    
 class HexTile():
     """Use a dict to store neighbors.
     Each pair of opposing sides on a hexagon will be equal to 
     a different value mod 3. 0,1,2,3,4,5."""
     
-    def __init__(self, pos, bubble=None):
+    def __init__(self, pos, radius, bubble=None):
         self.pos = pos
+        self.radius = radius
         self.neighbors = []
         self.bubble = bubble
         
@@ -64,15 +69,94 @@ class HexTile():
         self.bubble = b
         
     def clear_bubble(self, b):
-        self.bubble = None
+        self.bubble.kill()
     
     def is_occupied(self):
         if self.b is None:
-            return True
-        else:
             return False
+        else:
+            return True
             
+    def draw(self, surface):
+        draw_hexagon(self.pos, self.radius, surface, RED)
+        if self.bubble:
+            self.bubble.draw(surface)
+            
+class HexGrid():
+    def __init__(self, surface, radius):
+        self.surface = surface
+        self.radius  = radius
+        self.width = surface.get_width()
+        self.height = surface.get_height()
+        self.hex_width = math.sqrt(3) * radius
+        self.hex_height = 2 * radius
+        self.horizontal_spacing = self.hex_width
+        self.vertical_spacing = self.hex_height * 0.75
+        self.rows =  int(self.height//self.vertical_spacing)
+        self.cols = int(self.width//self.horizontal_spacing)
+        self.tiles = {}
+        self.tile_surface()
+
+    def tile_surface(self):
+        for i in range(self.rows):
+            if i % 2 == 0:
+                offset = self.hex_width//2
+            else:
+                offset = 0
+            for j in range(self.cols):
+                center = (j*self.horizontal_spacing+self.hex_width//2+offset, i*self.vertical_spacing+self.radius)
+                self.tiles[(i,j)] = HexTile(center, self.radius)
+                if offset:
+                    neighbors = [(i-1,j), (i-1,j+1), (i,j-1), (i,j+1), (i+1,j), (i+1,j+1)]
+                else:
+                    neighbors = [(i-1,j-1), (i-1,j), (i,j-1), (i,j+1), (i+1,j-1), (i+1,j)]
+                neighbors = [x for x in neighbors if x[0]>=0 and x[0]<self.rows and x[1]>=0 and x[1]<self.cols]
+                self.tiles[(i,j)].neighbors += neighbors
     
+    def draw(self, surface):
+        for tile in self.tiles.values():
+            tile.draw(surface)
+            
+    def snap_to_tile(bubble):
+        x = bubble.pos.x
+        y = bubble.pos.y
+        row = int(x // self.vertical_spacing)
+        col = int(y // self.horizontal_spacing)
+        self.tiles[(row,col)] = bubble
+        
+    def populate(self, row):
+        """Populate the grid up to a certain row with random bubbles"""
+        
+        for i in range(row):
+            for j in range(self.cols):
+                tile = self.tiles[(i,j)]
+                pos = tile.pos
+                self.tiles[(i,j)].set_bubble(Bubble(pos, (0,0), random.choice(COLORS)))
+                
+    def snap_to_tile(bubble):
+        x = bubble.pos.x
+        y = bubble.pos.y
+        row = y // self.vertical_spacing
+        col = x // self.horizontal_spacing
+        self.tiles[(row,col)].set_bubble(bubble)
+                
+    def update(self):
+        pass
+
+def test():
+    running = True
+    h = HexGrid(SCREEN, 20)
+    h.populate(5)
+    while running:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                running = False
+        h.draw(SCREEN)
+        pg.display.flip()
+
+# test()
+# pg.quit()
+        
                     
 class BubbleGrid():
     def __init__(self, bubble_size, grid_size):
@@ -106,18 +190,7 @@ class BubbleGrid():
     def draw(self, screen):
         self.bubbles.draw(screen)
 
-def test():
-    running = True
-    b = BubbleGrid(30, (WIDTH,HEIGHT))
-    while running:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                running = False
-        b.draw(SCREEN)
-        pg.display.flip()
 
-# test()
-# pg.quit()
 
 class Shooter():
     def __init__(self):
@@ -149,8 +222,8 @@ class Shooter():
             self.curr_bubble.vel = vec(10*math.cos(math.radians(self.angle)), -10*math.sin(math.radians(self.angle)))
         self.state = 2
        
-    def draw(self):
-        pg.draw.line(SCREEN, RED, self.start, self.end, 5)
+    def draw(self, surface):
+        pg.draw.line(surface, RED, self.start, self.end, 5)
         
 def snap_to_grid(bubble):
     curr_pos = bubble.pos

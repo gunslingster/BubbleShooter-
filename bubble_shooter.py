@@ -19,6 +19,14 @@ def draw_hexagon(center, radius, surface, color):
     points = (p1,p2,p3,p4,p5,p6)
     pg.draw.polygon(surface, color, points, 1)
 
+def calc_neighbors(i, j, offset, rows, cols):
+    if offset:
+         neighbors = [(i-1,j), (i-1,j+1), (i,j-1), (i,j+1), (i+1,j), (i+1,j+1)]
+    else:
+        neighbors = [(i-1,j-1), (i-1,j), (i,j-1), (i,j+1), (i+1,j-1), (i+1,j)]
+    neighbors = [x for x in neighbors if x[0]>=0 and x[0]<rows and x[1]>=0 and x[1]<cols]
+    return neighbors
+
 def tile_surface(surface, radius):
     width = surface.get_width()
     height = surface.get_height()
@@ -41,20 +49,11 @@ def tile_surface(surface, radius):
             b = Bubble(center, (0,0), color=random.choice(COLORS))
             bubbles.add(b)
             tiles[(i,j)] = HexTile(center, b)
-            if offset:
-                neighbors = [(i-1,j), (i-1,j+1), (i,j-1), (i,j+1), (i+1,j), (i+1,j+1)]
-            else:
-                neighbors = [(i-1,j-1), (i-1,j), (i,j-1), (i,j+1), (i+1,j-1), (i+1,j)]
-            neighbors = [x for x in neighbors if x[0]>=0 and x[0]<rows and x[1]>=0 and x[1]<cols]
+            neighbors = calc_neighbors(i, j, offset, rows, cols)
             tiles[(i,j)].neighbors += neighbors
     return bubbles, tiles
 
-def set_neighbors(tiles):
-    for item in tile.items():
-        index = item[0]
-        tile = item[1]
-        
-
+    
 def test():
     running = True
     SCREEN.fill((0,0,0))
