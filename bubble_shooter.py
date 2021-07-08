@@ -53,7 +53,7 @@ def tile_surface(surface, radius):
             tiles[(i,j)].neighbors += neighbors
     return bubbles, tiles
 
-    
+
 def test():
     running = True
     SCREEN.fill((0,0,0))
@@ -62,7 +62,7 @@ def test():
          print(item[0])
          print(item[1].bubble.color)
          print(item[1].neighbors)
-         
+
     pg.display.flip()
     while running:
         for event in pg.event.get():

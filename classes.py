@@ -1,5 +1,5 @@
 import pygame as pg
-import random 
+import random
 import os
 import math
 from settings import *
@@ -28,10 +28,10 @@ class Bubble(pg.sprite.Sprite):
             self.image = pg.transform.scale(pg.image.load(os.path.join(BUBBLE_PATH, 'purple.png')), size)
         else:
             self.image = pg.transform.scale(pg.image.load(os.path.join(BUBBLE_PATH, 'red.png')), size)
-            
+
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
-        
+
     def update(self):
         self.pos.x += self.vel.x
         self.pos.y += self.vel.y
@@ -44,44 +44,44 @@ class Bubble(pg.sprite.Sprite):
             self.vel.y = 0
             self.pos.y = 15
         self.rect.center = self.pos
-        
+
     def check_collision(self, bubbles):
         for bubble in bubbles:
             if bubble != self:
                 if pg.sprite.collide_circle(self, bubble):
                     self.vel = vec(0,0)
-                    
+
     def draw(self, surface):
         surface.blit(self.image, self.rect)
-                    
+
 class HexTile():
     """Use a dict to store neighbors.
-    Each pair of opposing sides on a hexagon will be equal to 
+    Each pair of opposing sides on a hexagon will be equal to
     a different value mod 3. 0,1,2,3,4,5."""
-    
+
     def __init__(self, pos, radius, bubble=None):
         self.pos = pos
         self.radius = radius
         self.neighbors = []
         self.bubble = bubble
-        
+
     def set_bubble(self, b):
-        self.bubble = b
-        
+        self.bubble = Bubble(self.pos, (0,0), b.color)
+
     def clear_bubble(self, b):
         self.bubble.kill()
-    
+
     def is_occupied(self):
-        if self.b is None:
+        if self.bubble is None:
             return False
         else:
             return True
-            
+
     def draw(self, surface):
         draw_hexagon(self.pos, self.radius, surface, RED)
         if self.bubble:
             self.bubble.draw(surface)
-            
+
 class HexGrid():
     def __init__(self, surface, radius):
         self.surface = surface
@@ -112,34 +112,31 @@ class HexGrid():
                     neighbors = [(i-1,j-1), (i-1,j), (i,j-1), (i,j+1), (i+1,j-1), (i+1,j)]
                 neighbors = [x for x in neighbors if x[0]>=0 and x[0]<self.rows and x[1]>=0 and x[1]<self.cols]
                 self.tiles[(i,j)].neighbors += neighbors
-    
+
     def draw(self, surface):
         for tile in self.tiles.values():
             tile.draw(surface)
-            
-    def snap_to_tile(bubble):
+
+    def snap_to_tile(self, bubble):
         x = bubble.pos.x
         y = bubble.pos.y
-        row = int(x // self.vertical_spacing)
-        col = int(y // self.horizontal_spacing)
-        self.tiles[(row,col)] = bubble
-        
+        row = int(y // self.vertical_spacing)
+        if row % 2 == 0:
+            offset = self.hex_width // 2
+        else:
+            offset = 0
+        col = int((x-offset) // self.horizontal_spacing)
+        self.tiles[(row,col)].set_bubble(bubble)
+
     def populate(self, row):
         """Populate the grid up to a certain row with random bubbles"""
-        
+
         for i in range(row):
             for j in range(self.cols):
                 tile = self.tiles[(i,j)]
                 pos = tile.pos
                 self.tiles[(i,j)].set_bubble(Bubble(pos, (0,0), random.choice(COLORS)))
-                
-    def snap_to_tile(bubble):
-        x = bubble.pos.x
-        y = bubble.pos.y
-        row = y // self.vertical_spacing
-        col = x // self.horizontal_spacing
-        self.tiles[(row,col)].set_bubble(bubble)
-                
+
     def update(self):
         pass
 
@@ -156,8 +153,8 @@ def test():
 
 # test()
 # pg.quit()
-        
-                    
+
+
 class BubbleGrid():
     def __init__(self, bubble_size, grid_size):
         self.bubble_size = bubble_size
@@ -165,9 +162,9 @@ class BubbleGrid():
         self.arr = self.gen_bubble_array()
         self.bubbles = pg.sprite.Group()
         self.populate()
-        
+
     def gen_bubble_array(self):
-        rows = self.grid_size[1] // self.bubble_size 
+        rows = self.grid_size[1] // self.bubble_size
         cols = self.grid_size[0] // self.bubble_size
         arr = []
         for i in range(rows):
@@ -176,7 +173,7 @@ class BubbleGrid():
                 row.append(random.choice(COLORS))
             arr.append(row)
         return arr
-    
+
     def populate(self):
         for i, row in enumerate(self.arr):
             if i%2 == 0:
@@ -186,11 +183,9 @@ class BubbleGrid():
             for j, bubble in enumerate(row):
                 b = Bubble(pos=(offset+j*self.bubble_size + self.bubble_size//2, i*self.bubble_size + self.bubble_size//2), vel=(0,0), color=random.choice(COLORS))
                 self.bubbles.add(b)
-    
+
     def draw(self, screen):
         self.bubbles.draw(screen)
-
-
 
 class Shooter():
     def __init__(self):
@@ -199,7 +194,7 @@ class Shooter():
         self.end = (WIDTH//2 + 50*math.cos(math.radians(self.angle)), HEIGHT - 50*math.sin(math.radians(self.angle)))
         self.state = 1
         self.load()
-    
+
     def update(self, cw):
         if cw:
             self.angle -= 3
@@ -212,34 +207,15 @@ class Shooter():
         self.end = (WIDTH//2 + 50*math.cos(math.radians(self.angle)), HEIGHT - 50*math.sin(math.radians(self.angle)))
         if self.state == 1:
             self.curr_bubble.pos = vec(self.end)
-    
+
     def load(self):
         self.curr_bubble = Bubble(pos=self.end, vel=(0,0), color=random.choice(COLORS))
         self.state = 1
-    
+
     def shoot(self):
         if self.state == 1:
             self.curr_bubble.vel = vec(10*math.cos(math.radians(self.angle)), -10*math.sin(math.radians(self.angle)))
         self.state = 2
-       
+
     def draw(self, surface):
         pg.draw.line(surface, RED, self.start, self.end, 5)
-        
-def snap_to_grid(bubble):
-    curr_pos = bubble.pos
-    print(curr_pos)
-    size = bubble.size[0]
-    row = curr_pos.y//size
-    if row % 2 == 0:
-        offset = size//2
-    else:
-        offset = 0
-    col = curr_pos.x//size
-    print(row)
-    print(col)
-    x = col*size + size//2 + offset
-    y = row*size + size//2
-    bubble.pos = vec(x,y)
-    
-    
-    
