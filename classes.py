@@ -68,8 +68,8 @@ class HexTile():
     def set_bubble(self, b):
         self.bubble = Bubble(self.pos, (0,0), b.color)
 
-    def clear_bubble(self, b):
-        self.bubble.kill()
+    def clear_bubble(self):
+        self.bubble = None
 
     def is_occupied(self):
         if self.bubble is None:
@@ -127,6 +127,47 @@ class HexGrid():
             offset = 0
         col = int((x-offset) // self.horizontal_spacing)
         self.tiles[(row,col)].set_bubble(bubble)
+        
+    def snap_to_tile2(self, bubble):
+        x = bubble.pos.x
+        y = bubble.pos.y
+        closest_tile = None
+        index = None
+        min_dist = 10000
+        for tile in self.tiles.items():
+            i = tile[0]
+            t = tile[1]
+            tx = t.pos[0]
+            ty = t.pos[1]
+            if t.bubble is None:
+                dist = math.sqrt((x-tx)**2 + (y-ty)**2) 
+                if dist < min_dist:
+                    closest_tile = tile
+                    index = i
+                    min_dist = dist
+        self.tiles[index].set_bubble(bubble)
+        return index
+        
+    def find_cluster(self, tile):
+        cluster_type = tile.bubble.color
+        checked = []
+        cluster = []
+        unchecked = [tile]
+        while len(unchecked) > 0:
+            curr_tile = unchecked.pop()
+            if curr_tile.bubble.color == cluster_type:
+                cluster.append(curr_tile)
+                for neighbor in curr_tile.neighbors:
+                    if self.tiles[neighbor].bubble is not None and self.tiles[neighbor] not in checked: 
+                        unchecked.append(self.tiles[neighbor])
+            checked.append(curr_tile)
+        # for tile in cluster:
+        #     print(tile.bubble.color)
+        if len(cluster) >= 3:
+            for tile in cluster:
+                tile.clear_bubble()
+                # print(tile.bubble.color)
+                    
 
     def populate(self, row):
         """Populate the grid up to a certain row with random bubbles"""
