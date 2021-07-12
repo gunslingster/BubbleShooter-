@@ -32,8 +32,8 @@ def main():
                     s.curr_bubble.vel = vec((0,0))
         if s.curr_bubble.vel.y == 0  and s.state == 2:
             index = grid.snap_to_tile2(s.curr_bubble)
-            print(index)
             grid.find_cluster(grid.tiles[index])
+            grid.remove_floating()
             s.load()
         s.curr_bubble.update()
         #SCREEN.blit(BG, (0,0))

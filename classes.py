@@ -59,9 +59,10 @@ class HexTile():
     Each pair of opposing sides on a hexagon will be equal to
     a different value mod 3. 0,1,2,3,4,5."""
 
-    def __init__(self, pos, radius, bubble=None):
+    def __init__(self, pos, radius, index, bubble=None):
         self.pos = pos
         self.radius = radius
+        self.index = index
         self.neighbors = []
         self.bubble = bubble
 
@@ -105,7 +106,7 @@ class HexGrid():
                 offset = 0
             for j in range(self.cols):
                 center = (j*self.horizontal_spacing+self.hex_width//2+offset, i*self.vertical_spacing+self.radius)
-                self.tiles[(i,j)] = HexTile(center, self.radius)
+                self.tiles[(i,j)] = HexTile(center, self.radius, (i,j))
                 if offset:
                     neighbors = [(i-1,j), (i-1,j+1), (i,j-1), (i,j+1), (i+1,j), (i+1,j+1)]
                 else:
@@ -161,13 +162,37 @@ class HexGrid():
                     if self.tiles[neighbor].bubble is not None and self.tiles[neighbor] not in checked: 
                         unchecked.append(self.tiles[neighbor])
             checked.append(curr_tile)
-        # for tile in cluster:
-        #     print(tile.bubble.color)
         if len(cluster) >= 3:
             for tile in cluster:
                 tile.clear_bubble()
-                # print(tile.bubble.color)
-                    
+                
+    def check_floating(self, tile):
+        checked = []
+        cluster = []
+        unchecked = [tile]
+        while len(unchecked) > 0:
+            curr_tile = unchecked.pop()
+            if curr_tile.bubble:
+                cluster.append(curr_tile)
+                for neighbor in curr_tile.neighbors:
+                    if self.tiles[neighbor].bubble is not None and self.tiles[neighbor] not in checked: 
+                        unchecked.append(self.tiles[neighbor])
+            checked.append(curr_tile)
+        return cluster
+
+    def remove_floating(self):
+        for tile in self.tiles.values():
+            cluster = self.check_floating(tile)
+            floating = True
+            for t in cluster:
+                if t.index[0] == 0:
+                    floating = False
+                    break
+            #print('{}: {}'.format(tile.index, floating))
+            if floating:
+                tile.clear_bubble()
+
+
 
     def populate(self, row):
         """Populate the grid up to a certain row with random bubbles"""
